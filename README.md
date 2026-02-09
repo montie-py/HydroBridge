@@ -5,7 +5,8 @@ Pretty useful for scenarios, when you need to send some data from a PLC to a rem
 
 Example:
 
-                        Script
-                           |
-                           V
-PLC <---------> Device with Internet connection <---------> Data Server
+                          Script         
+                             |
+                             V
+    PLC <---------> Device with Internet connection <---------> Data Server
+
