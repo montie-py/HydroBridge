@@ -11,3 +11,7 @@ Example:
                              V
     PLC <---------> Device with Internet connection <---------> Data Server
 
+## Usage
+
+`main.py --ip="192.168.1.200" --port=502 --address_from=10 --address_to=10`
+
