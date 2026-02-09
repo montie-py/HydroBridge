@@ -1,10 +1,11 @@
 # #!/usr/bin/env python3
-import csv
+import csv, argparse
+from settings import OUTPUT_FILE_NAME
 
-ip = "192.168.1.200"
-port = 502
 
 def raw_tcp_parse_register(
+        ip: str,
+        port: int,
         function_code: int = 0x03,
         start_address_from: int = 0x03,
         start_address_to: int = 0xE8,
@@ -34,7 +35,12 @@ def raw_tcp_parse_register(
 
     return list(response)
 
-def pymodbus_parse_register(address: int, count: int) -> list[int]:
+def pymodbus_parse_register(
+        ip: str,
+        port: int,
+        address: int,
+        count: int
+) -> list[int]:
 
     from pymodbus.client import ModbusTcpClient
 
@@ -49,7 +55,7 @@ def pymodbus_parse_register(address: int, count: int) -> list[int]:
 
 
 def generate_csv_output(registers: list[int]):
-    with open('output.csv', 'w', newline='') as csvfile:
+    with open(OUTPUT_FILE_NAME, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow([
             'seconds_counter',
@@ -65,7 +71,17 @@ def generate_csv_output(registers: list[int]):
         ])
         writer.writerow(registers)
 
+def main(argv=None):
+    parser = argparse.ArgumentParser(description='Image metadata search CLI')
+    parser.add_argument('--ip', default='192.168.1.200', help='IPv4 of a PLC/HMI')
+    parser.add_argument('--port', type=int, default=502, help='Port of PLC/HMI')
+    args = parser.parse_args(argv)
+
+    #run parsing and CSV generation logic
+    registers_output = pymodbus_parse_register(ip=args.ip, port=args.port, address=10, count=10)
+    generate_csv_output(registers_output)
+
 
 if __name__ == "__main__":
-    registers_output = pymodbus_parse_register(address=10, count=10)
-    generate_csv_output(registers_output)
+    main()
+    print("Done")
