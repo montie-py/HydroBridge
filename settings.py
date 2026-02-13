@@ -1,1 +1,2 @@
 OUTPUT_FILE_NAME = "output.csv"
+HR_FUNC_CODE = 3

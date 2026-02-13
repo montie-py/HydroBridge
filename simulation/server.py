@@ -1,6 +1,7 @@
 import csv
 import time, datetime
 import os
+import settings
 import struct
 import threading
 from pymodbus.server import StartTcpServer
@@ -79,7 +80,11 @@ def feed_csv_to_registers(cont, csv_p):
                     treat_int(value, values)
 
             # Write to holding registers
-            cont[0].setValues(3, 0, values)
+            cont[0].setValues(
+                func_code=settings.HR_FUNC_CODE,
+                address=0,
+                values=values
+            )
 
             print("Updated registers:", values)
             time.sleep(5)
