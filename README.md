@@ -15,3 +15,5 @@ Example:
 
 `main.py --ip="192.168.1.200" --port=502 --address_from=10 --address_to=10`
 
+## TODO
+- [ ] Transform main.py into a polling client: to poll everything from server.py, and to generate a csv file once in 2 mins.
