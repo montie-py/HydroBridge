@@ -1,5 +1,4 @@
-from main import decode_by_chunks, decode_registers
-from pymodbus.client import ModbusTcpClient
+from business.polling import decode_by_chunks, decode_registers
 
 
 def test_decode_by_chunks():
@@ -20,6 +19,5 @@ def test_decode_registers():
         assert isinstance(register, int)
     for register in decoded_registers[1::2]:
         assert isinstance(register, float)
-    assert 1 ==1
 
 
