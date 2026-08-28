@@ -1,25 +1,44 @@
 # #!/usr/bin/env python3
 import argparse
-from business.csv_generation import generate_csv_output
-from business.polling import pymodbus_parse_register, decode_registers
+from business.csv_generation import CsvGeneration
+from business.polling import Polling
+from business.client import Client
+from business.server import Server
+from business.publish_to_plc import PublishToPLC
+
+class InstanceHandler:
+    def get_client(self):
+        return Client()
+
+    def get_server(self):
+        return Server()
+
+    def get_publish_to_plc(self):
+        return PublishToPLC()
 
 
 def main(argv=None):
     global args
-    parser = argparse.ArgumentParser(description='Image metadata search CLI')
-    parser.add_argument('--ip', default='192.168.1.200', help='IPv4 of a PLC/HMI')
-    parser.add_argument('--port', type=int, default=502, help='Port of PLC/HMI')
-    parser.add_argument('--address_from', type=int, default=10, help='Index of the first register to search')
-    parser.add_argument('--address_to', type=int, default=10,
-                        help='How many registers to search from the initial index')
-    parser.add_argument('--schema', default='--schema "0:uint16,1-2:float32,3:int16,4-5:int32"',
-                        help='How to decode the registers')
+    parser = argparse.ArgumentParser(description='HydroBridge: Parsing PLC registers and sending them to Azure')
+    parser.add_argument('--instance', default='client', help='client|server|publish_plc')
     args = parser.parse_args(argv)
 
+    instance_handler = InstanceHandler()
+
+    instance_handler_dict = {
+       "client": instance_handler.get_client,
+        "server": instance_handler.get_server, "publish_plc": instance_handler.get_publish_to_plc,
+        "default": instance_handler.get_client
+    }
+
+    instance = instance_handler_dict.get(args.instance, "default")
+    instance.run()
+
+    polling = Polling()
     # run parsing and CSV generation logic
-    registers_output = pymodbus_parse_register(ip=args.ip, port=args.port, address=args.address_from,
+    registers_output = polling.pymodbus_parse_register(ip=args.ip, port=args.port, address=args.address_from,
                                                count=args.address_to)
-    decoded_registers_output = decode_registers(registers_output, args.schema)
+    decoded_registers_output = polling.decode_registers(registers_output, args.schema)
 
     headers = [
         'seconds_counter',
@@ -33,8 +52,8 @@ def main(argv=None):
         'shutdown_flag',
         'heater_status'
     ]
-    generate_csv_output(decoded_registers_output, headers)
-
+    csv_generation = CsvGeneration()
+    csv_generation.generate_csv_output(decoded_registers_output, headers)
 
 if __name__ == "__main__":
     main()

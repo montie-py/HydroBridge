@@ -1,0 +1,14 @@
+{
+  "DevicesConfiguration" :
+  [
+    {
+      "SerialNumber" : "1705109868",
+      "DeviceIp" : "127.0.0.1",
+      "DevicePort" : 502,
+      "RegistersRangeFrom" : 4,
+      "RegistersRangeQuantity" : 53,
+      "AlarmsRegistersRangeFrom": 54,
+      "AlarmsRegistersQuantity": 4
+    }
+  ]
+}
