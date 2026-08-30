@@ -10,5 +10,16 @@
       "AlarmsRegistersRangeFrom": 54,
       "AlarmsRegistersQuantity": 4
     }
-  ]
+  ],
+  
+  "IntervalConfiguration":
+  {
+    "PollingLoopPauseMills": 100,
+    "ConnectionTryingTimeoutMills": 5000,
+    "PollingLoopIntervalMills": 1000,
+    "RetryDelayMills": 1000,
+    "ConnectionTryingTimeoutMilis": 5000,
+    "ReconnectToPlcIntervalMilis": 1000,
+    "FeedValuesIntervalMilis": 1000
+  }
 }

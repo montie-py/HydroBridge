@@ -13,6 +13,20 @@ files = [
 ]
 
 [[package]]
+name = "easymodbus"
+version = "2.1.6"
+description = "THE standard library for Modbus RTU and Modbus TCP - See www.EasyModbusTCP.NET for documentation"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "easymodbus-2.1.6.tar.gz", hash = "sha256:4c170f356cb458b90571378558726a3810d50b81020b30ae61f6ec4384257347"},
+]
+
+[package.dependencies]
+pyserial = "*"
+
+[[package]]
 name = "pydantic"
 version = "2.13.4"
 description = "Data validation using Python type hints"
@@ -187,6 +201,21 @@ serial = ["pyserial (>=3.5)"]
 simulator = ["aiohttp (>=3.14.1) ; python_version >= \"3.12\"", "aiohttp (>=3.8.6) ; python_version < \"3.12\""]
 
 [[package]]
+name = "pyserial"
+version = "3.5"
+description = "Python Serial Port Extension"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "pyserial-3.5-py2.py3-none-any.whl", hash = "sha256:c4451db6ba391ca6ca299fb3ec7bae67a5c55dde170964c7a14ceefec02f2cf0"},
+    {file = "pyserial-3.5.tar.gz", hash = "sha256:3c77e014170dfffbd816e6ffc205e9842efb10be9f58ec16d3e8675b4925cddb"},
+]
+
+[package.extras]
+cp2110 = ["hidapi"]
+
+[[package]]
 name = "typing-extensions"
 version = "4.16.0"
 description = "Backported and Experimental Type Hints for Python 3.9+"
@@ -216,4 +245,4 @@ typing-extensions = ">=4.15.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.14"
-content-hash = "5633d13336b0d1b71d0e1901cfe6919cccccb79c45f44c2164e6bf791f8e1039"
+content-hash = "d6caa5b3bf4c2141c0566d6bd171068dae1a3476427b0371e10359f832c759c8"
