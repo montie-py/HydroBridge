@@ -26,34 +26,16 @@ def main(argv=None):
     instance_handler = InstanceHandler()
 
     instance_handler_dict = {
-       "client": instance_handler.get_client,
-        "server": instance_handler.get_server, "publish_plc": instance_handler.get_publish_to_plc,
-        "default": instance_handler.get_client
+       "client": instance_handler.get_client(),
+        "server": instance_handler.get_server(),
+        "publish_plc": instance_handler.get_publish_to_plc(),
+        "default": instance_handler.get_client()
     }
+
+    print(args.instance, "---")
 
     instance = instance_handler_dict.get(args.instance, "default")
     instance.run()
-
-    polling = Polling()
-    # run parsing and CSV generation logic
-    registers_output = polling.pymodbus_parse_register(ip=args.ip, port=args.port, address=args.address_from,
-                                               count=args.address_to)
-    decoded_registers_output = polling.decode_registers(registers_output, args.schema)
-
-    headers = [
-        'seconds_counter',
-        'minutes_counter',
-        'valve1_open',
-        'motor_on',
-        'pump_on',
-        'flow_meter_1_screen',
-        'alert_flag_1',
-        'alert_flag_2',
-        'shutdown_flag',
-        'heater_status'
-    ]
-    csv_generation = CsvGeneration()
-    csv_generation.generate_csv_output(decoded_registers_output, headers)
 
 if __name__ == "__main__":
     main()

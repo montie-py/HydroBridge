@@ -9,7 +9,7 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "pymodbus (>=3.12.1,<4.0.0)",
-    "pydantic (>=2.13.4,<3.0.0)",
+    "pydantic (==2.13.5)",
     "easymodbus (>=2.1.6,<3.0.0)"
 ]
 
