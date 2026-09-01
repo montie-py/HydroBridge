@@ -1,7 +1,10 @@
 import logging
 import threading
+import csv
+from time import sleep
 
 from easymodbus import modbus_server
+from easymodbus.modbus_client import convert_double_to_two_registers
 
 from business.runnable import Runnable
 
@@ -37,7 +40,8 @@ class Server(Runnable):
     def run(self):
         """Start the server, then accept register edits from stdin."""
         self.start()
-        self._command_loop()
+        self.fill_registers()
+        # self._command_loop()
 
     # --- register access -------------------------------------------------
 
@@ -46,6 +50,10 @@ class Server(Runnable):
 
     def set_input_register(self, address, value):
         self.server.input_registers[address + _ADDR_OFFSET] = int(value)
+
+    def set_holding_registers_from_double_value(self, address, value_list):
+        for value in value_list:
+            self.set_holding_register(address, value)
 
     def set_coil(self, address, value):
         self.server.coils[address + _ADDR_OFFSET] = bool(value)
@@ -112,3 +120,19 @@ class Server(Runnable):
         except KeyboardInterrupt:
             pass
         print("stopping")
+
+    def fill_registers(self, file_name="input.csv"):
+        with open(file_name, mode="r", encoding="utf-8", newline="") as file:
+            reader = csv.reader(file)
+
+            # skipping header
+            next(reader)
+
+            for row in reader:
+                i = 0
+                for column in row[2:]:
+                   value_to_registers_list = convert_double_to_two_registers(float(column))
+                   self.set_holding_registers_from_double_value(value_to_registers_list, i)
+                   i += 1
+
+                sleep(5)
