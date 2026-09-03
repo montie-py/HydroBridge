@@ -4,7 +4,7 @@ import csv
 from time import sleep
 
 from easymodbus import modbus_server
-from easymodbus.modbus_client import convert_double_to_two_registers
+from easymodbus.modbus_client import convert_float_to_two_registers
 
 from business.runnable import Runnable
 
@@ -51,7 +51,7 @@ class Server(Runnable):
     def set_input_register(self, address, value):
         self.server.input_registers[address + _ADDR_OFFSET] = int(value)
 
-    def set_holding_registers_from_double_value(self, address, value_list):
+    def set_holding_registers_from_float_value(self, value_list, address):
         for value in value_list:
             self.set_holding_register(address, value)
 
@@ -130,9 +130,10 @@ class Server(Runnable):
 
             for row in reader:
                 i = 0
-                for column in row[2:]:
-                   value_to_registers_list = convert_double_to_two_registers(float(column))
-                   self.set_holding_registers_from_double_value(value_to_registers_list, i)
+                print(row[3:])
+                for column in row[3:]:
+                   value_to_registers_list = convert_float_to_two_registers(float(column))
+                   self.set_holding_registers_from_float_value(value_to_registers_list, i)
                    i += 1
 
                 sleep(5)
