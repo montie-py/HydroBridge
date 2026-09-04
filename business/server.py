@@ -17,14 +17,14 @@ _ADDR_OFFSET = 1
 
 
 class Server(Runnable):
-    def __init__(self, host="127.0.0.1", port=502):
+    def __init__(self, host="127.0.0.1", port=5020):
         self.host = host
         self.port = port
         self.server = modbus_server.ModbusServer()
         self.server.host = host
         self.server.port = port
         # Quieten the per-request INFO logging so the prompt stays readable.
-        self.server.logging_level = logging.WARNING
+        self.server.logging_level = logging.DEBUG
         self._thread = None
 
     # --- lifecycle ---------------------------------------------------------
@@ -52,8 +52,8 @@ class Server(Runnable):
         self.server.input_registers[address + _ADDR_OFFSET] = int(value)
 
     def set_holding_registers_from_float_value(self, value_list, address):
-        for value in value_list:
-            self.set_holding_register(address, value)
+        for offset, value in enumerate(value_list):
+            self.set_holding_register(address + offset, value)
 
     def set_coil(self, address, value):
         self.server.coils[address + _ADDR_OFFSET] = bool(value)
@@ -133,7 +133,8 @@ class Server(Runnable):
                 print(row[3:])
                 for column in row[3:]:
                    value_to_registers_list = convert_float_to_two_registers(float(column))
+                   # value_to_registers_list.sort(reverse=True)
                    self.set_holding_registers_from_float_value(value_to_registers_list, i)
-                   i += 1
+                   i += 2
 
                 sleep(5)
