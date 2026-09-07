@@ -14,6 +14,7 @@ from business.runnable import Runnable
 # helpers hide that off-by-one so callers work with the address a Modbus
 # client actually sees.
 _ADDR_OFFSET = 1
+_SERVER_LOGGING_LEVEL = logging.CRITICAL
 
 
 class Server(Runnable):
@@ -23,8 +24,7 @@ class Server(Runnable):
         self.server = modbus_server.ModbusServer()
         self.server.host = host
         self.server.port = port
-        # Quieten the per-request INFO logging so the prompt stays readable.
-        self.server.logging_level = logging.DEBUG
+        self.server.logging_level = _SERVER_LOGGING_LEVEL
         self._thread = None
 
     # --- lifecycle ---------------------------------------------------------
