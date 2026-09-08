@@ -1,4 +1,4 @@
-from settings import OUTPUT_FILE_NAME
+from project_settings import OUTPUT_FILE_NAME
 import csv
 
 class CsvGeneration:

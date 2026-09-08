@@ -1,7 +1,5 @@
 # #!/usr/bin/env python3
-import argparse
-from business.csv_generation import CsvGeneration
-from business.polling import Polling
+import argparse, asyncio
 from business.client import Client
 from business.server import Server
 from business.publish_to_plc import PublishToPLC
@@ -17,7 +15,7 @@ class InstanceHandler:
         return PublishToPLC()
 
 
-def main(argv=None):
+async def main(argv=None):
     global args
     parser = argparse.ArgumentParser(description='HydroBridge: Parsing PLC registers and sending them to Azure')
     parser.add_argument('--instance', default='client', help='client|server|publish_plc')
@@ -35,8 +33,8 @@ def main(argv=None):
     print(args.instance, "---")
 
     instance = instance_handler_dict.get(args.instance, "default")
-    instance.run()
+    await instance.run()
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
     print("Done")

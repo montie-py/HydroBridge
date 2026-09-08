@@ -37,7 +37,7 @@ class Server(Runnable):
         self._thread.start()
         print(f"Modbus server listening on {self.host}:{self.port}")
 
-    def run(self):
+    async def run(self):
         """Start the server, then accept register edits from stdin."""
         self.start()
         self.fill_registers()
