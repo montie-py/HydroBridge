@@ -1,6 +1,6 @@
 # #!/usr/bin/env python3
 import argparse, asyncio
-from business.client import Client
+from business.client.client import Client
 from business.server import Server
 from business.publish_to_plc import PublishToPLC
 

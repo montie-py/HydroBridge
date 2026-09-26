@@ -1,7 +1,8 @@
+from business.client.adapters.modbus_adapter import ModbusPLCAdapter
 from business.runnable import Runnable
 from config.devices_config import get_config
 from easymodbus.modbus_client import ModbusClient
-import asyncio, time, json
+import time, json
 import easymodbus.modbus_client as modbus_client
 from azure.iot.device.aio import IoTHubDeviceClient
 from azure.iot.device import Message
@@ -16,6 +17,14 @@ class Client(Runnable):
         await self.parse_server()
 
     async def parse_server(self):
+        plc_adapter = ModbusPLCAdapter(
+            host="127.0.0.1",
+            port=5020,
+            device_id="hydrobridge-gw1",
+            start_address=0,
+            count=0
+        )
+
         modbus_client_class_instance = ModbusClient("127.0.0.1", 5020)
         modbus_client_class_instance.connect()
         try:
