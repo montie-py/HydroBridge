@@ -11,11 +11,11 @@ class ModbusPLCAdapter(RegisterSourcePort):
         self._start_address = start_address
         self._count = count
 
-    def read_block(self):
+    async def read_block(self) -> RawRegisterBlock:
         if not self._client.is_connected():
             self._client.connect()
 
-        registers_values_list = ModbusClient.read_holding_registers(self._start_address, self._count)
+        registers_values_list = await ModbusClient.read_holding_registers(self._start_address, self._count)
 
         return RawRegisterBlock(
             device_id=self._device_id,

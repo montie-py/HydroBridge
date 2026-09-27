@@ -1,5 +1,9 @@
+from typing import Mapping
+
 import easymodbus.modbus_client as modbus_client_class_file
 
+from business.client.adapters.azure_iot_adapter import AzureIoTHubPublisher
+from business.client.adapters.modbus_adapter import ModbusPLCAdapter
 from business.client.domain.models import PLCReading
 
 
@@ -17,14 +21,14 @@ class RegistersProcessingService:
 
     def __init__(
             self,
-            source,
-            publisher
+            source : ModbusPLCAdapter,
+            publisher : AzureIoTHubPublisher
     ):
-        self._source = source
-        self._publisher = publisher
+        self._source : ModbusPLCAdapter = source
+        self._publisher : AzureIoTHubPublisher = publisher
 
-    def run_once(self):
-        raw_register_block_instance = self._source.read_block()
+    async def run_once(self) -> Mapping[str, int]:
+        raw_register_block_instance = await self._source.read_block()
 
         parsed_registers_block = self._parse(raw_register_block_instance.registers)
         headed_registers_block = self._attach_headers(parsed_registers_block)
@@ -35,7 +39,7 @@ class RegistersProcessingService:
             read_at=raw_register_block_instance.read_at
         )
 
-        self._publisher.publish(plc_reading)
+        return await self._publisher.publish(plc_reading)
 
     def _attach_headers(self, parsed_registers_block):
         return {self.__columns[k]: v for k, v in enumerate(parsed_registers_block)}

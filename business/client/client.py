@@ -1,4 +1,6 @@
+from business.client.adapters.azure_iot_adapter import AzureIoTHubPublisher
 from business.client.adapters.modbus_adapter import ModbusPLCAdapter
+from business.client.domain.services import RegistersProcessingService
 from business.runnable import Runnable
 from config.devices_config import get_config
 from easymodbus.modbus_client import ModbusClient
@@ -22,25 +24,36 @@ class Client(Runnable):
             port=5020,
             device_id="hydrobridge-gw1",
             start_address=0,
-            count=0
+            count=52
         )
 
-        modbus_client_class_instance = ModbusClient("127.0.0.1", 5020)
-        modbus_client_class_instance.connect()
-        try:
-            while True:
-                registers_values_list = modbus_client_class_instance.read_holding_registers(0, 52)
-                registers_floats = []
-                registers_count = 0
-                while registers_count < 52:
-                    registers_floats.append(modbus_client.convert_registers_to_float(
-                        [registers_values_list[registers_count], registers_values_list[registers_count + 1]]))
-                    registers_count += 2
-                await self._send_to_azure(registers_floats)
-                print(registers_floats)
-                time.sleep(3)
-        finally:
-            await self._azure_iot_client.disconnect()
+        azure_publisher = AzureIoTHubPublisher(
+            connection_string=IOTHUB_DEVICE_CONNECTION_STRING
+        )
+
+        service = RegistersProcessingService(plc_adapter, azure_publisher)
+
+        while True:
+            readings = await service.run_once()
+            print(f"Published {len(readings)} readings")
+            time.sleep(3)
+
+        # modbus_client_class_instance = ModbusClient("127.0.0.1", 5020)
+        # modbus_client_class_instance.connect()
+        # try:
+        #     while True:
+        #         registers_values_list = modbus_client_class_instance.read_holding_registers(0, 52)
+        #         registers_floats = []
+        #         registers_count = 0
+        #         while registers_count < 52:
+        #             registers_floats.append(modbus_client.convert_registers_to_float(
+        #                 [registers_values_list[registers_count], registers_values_list[registers_count + 1]]))
+        #             registers_count += 2
+        #         await self._send_to_azure(registers_floats)
+        #         print(registers_floats)
+        #         time.sleep(3)
+        # finally:
+        #     await self._azure_iot_client.disconnect()
 
     async def _initializeAzureConnection(self):
         self._azure_iot_client = IoTHubDeviceClient.create_from_connection_string(IOTHUB_DEVICE_CONNECTION_STRING)

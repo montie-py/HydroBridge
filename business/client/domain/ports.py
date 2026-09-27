@@ -1,5 +1,8 @@
 from abc import ABC, abstractmethod
 
+from business.client.domain.models import PLCReading
+
+
 class RegisterSourcePort(ABC):
 
     @abstractmethod
@@ -9,5 +12,5 @@ class RegisterSourcePort(ABC):
 class TelemetryPublisherPort(ABC):
 
     @abstractmethod
-    def publish(self, plc_reading):
+    def publish(self, plc_reading : PLCReading):
         pass
