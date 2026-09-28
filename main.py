@@ -16,23 +16,20 @@ class InstanceHandler:
 
 
 async def main(argv=None):
-    global args
-    parser = argparse.ArgumentParser(description='HydroBridge: Parsing PLC registers and sending them to Azure')
-    parser.add_argument('--instance', default='client', help='client|server|publish_plc')
-    args = parser.parse_args(argv)
-
     instance_handler = InstanceHandler()
-
-    instance_handler_dict = {
-       "client": instance_handler.get_client(),
-        "server": instance_handler.get_server(),
-        "publish_plc": instance_handler.get_publish_to_plc(),
-        "default": instance_handler.get_client()
+    factories = {
+        "client": instance_handler.get_client,
+        "server": instance_handler.get_server,
+        "publish_plc": instance_handler.get_publish_to_plc,
     }
+
+    parser = argparse.ArgumentParser(description='HydroBridge: Parsing PLC registers and sending them to Azure')
+    parser.add_argument('--instance', choices=factories, default='client')
+    args = parser.parse_args(argv)
 
     print(args.instance, "---")
 
-    instance = instance_handler_dict.get(args.instance, "default")
+    instance = factories[args.instance]()
     await instance.run()
 
 if __name__ == "__main__":

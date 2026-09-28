@@ -15,7 +15,7 @@ class RegistersProcessingService:
                "Polisher Pre Pump Pressure (PSI)", "Polisher Post Pump Pressure (PSI)",
                "Polisher Product Pressure (PSI)", "Polisher Product Flow (GPM)", "Polisher Product Temperature (C)",
                "Polisher Waste Flow (GPM)", "Polisher Recycle Flow (GPM)", "Polisher Product Conductivity (uS)",
-               "System Product Conductivity (uS)", "-Reserved-", "-Reserved-", "-Reserved-",
+               "System Product Conductivity (uS)", "-Reserved1-", "-Reserved2-", "-Reserved3-",
                "Worker Inlet Flow (GPM, calc)", "Polisher Inlet Flow (GPM, calc)"
                ]
 
@@ -50,7 +50,7 @@ class RegistersProcessingService:
         while registers_count < 52:
             registers_floats.append(modbus_client_class_file.convert_registers_to_float(
                 [registers_block[registers_count],
-                 registers_block[registers_count + 1]]))
+                 registers_block[registers_count + 1]])[0])
             registers_count += 2
 
         return registers_floats

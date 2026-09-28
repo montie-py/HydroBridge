@@ -1,4 +1,8 @@
+from pathlib import Path
+
 from pydantic import BaseModel, Field
+
+_CONFIG_PATH = Path(__file__).resolve().parent / "devices_config.json"
 
 class DevicesConfig(BaseModel):
     serial_number: str = Field(alias="SerialNumber")
@@ -24,6 +28,4 @@ class AppConfig(BaseModel):
 
 
 def get_config():
-    with open('./config/devices_config.json', 'r') as f:
-        config = AppConfig.model_validate_json(f.read())
-    return config
+    return AppConfig.model_validate_json(_CONFIG_PATH.read_text(encoding="utf-8"))
