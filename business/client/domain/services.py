@@ -48,9 +48,12 @@ class RegistersProcessingService:
         registers_floats = []
         registers_count = 0
         while registers_count < 52:
-            registers_floats.append(modbus_client_class_file.convert_registers_to_float(
+            converted_value = modbus_client_class_file.convert_registers_to_float(
                 [registers_block[registers_count],
-                 registers_block[registers_count + 1]])[0])
+                 registers_block[registers_count + 1]]
+            )[0]
+
+            registers_floats.append(f'{converted_value:.2f}')
             registers_count += 2
 
         return registers_floats
