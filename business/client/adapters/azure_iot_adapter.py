@@ -16,6 +16,9 @@ class AzureIoTHubPublisher(TelemetryPublisherPort):
         )
         self._operation_timeout_sec = operation_timeout_sec
 
+    async def __aenter__(self):
+        return self
+
     async def __aexit__(self, exc_type, exc, tb):
         await self._client.shutdown()
 

@@ -7,6 +7,10 @@ class PublishFailedError(Exception):
     """Raised by a TelemetryPublisherPort when a reading could not be delivered."""
 
 
+class SourceConnectionError(Exception):
+    """Raised by a RegisterSourcePort when it could not connect to the server."""
+
+
 class RegisterSourcePort(ABC):
 
     @abstractmethod
