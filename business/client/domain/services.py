@@ -1,10 +1,11 @@
-from typing import Mapping
+from collections import deque
 
 import easymodbus.modbus_client as modbus_client_class_file
 
 from business.client.adapters.azure_iot_adapter import AzureIoTHubPublisher
 from business.client.adapters.modbus_adapter import ModbusPLCAdapter
 from business.client.domain.models import PLCReading
+from business.client.domain.ports import PublishFailedError
 
 
 class RegistersProcessingService:
@@ -22,12 +23,23 @@ class RegistersProcessingService:
     def __init__(
             self,
             source : ModbusPLCAdapter,
-            publisher : AzureIoTHubPublisher
+            publisher : AzureIoTHubPublisher,
+            max_pending : int = 20
     ):
         self._source : ModbusPLCAdapter = source
         self._publisher : AzureIoTHubPublisher = publisher
+        # rows not yet delivered to Azure; when full, appending drops the oldest row
+        self._pending : deque[PLCReading] = deque(maxlen=max_pending)
 
-    async def run_once(self) -> Mapping[str, int]:
+    @property
+    def pending_count(self) -> int:
+        return len(self._pending)
+
+    async def run_once(self) -> int:
+        """Read one row from the PLC, queue it and try to deliver the whole queue.
+
+        Returns the number of rows sent; on connection failure the unsent rows stay queued for the next call.
+        """
         raw_register_block_instance = await self._source.read_block()
 
         parsed_registers_block = self._parse(raw_register_block_instance.registers)
@@ -39,7 +51,20 @@ class RegistersProcessingService:
             read_at=raw_register_block_instance.read_at
         )
 
-        return await self._publisher.publish(plc_reading)
+        self._pending.append(plc_reading)
+        return await self._flush_pending()
+
+    async def _flush_pending(self) -> int:
+        sent = 0
+        while self._pending:
+            try:
+                await self._publisher.publish(self._pending[0])
+            except PublishFailedError as exc:
+                print(f"Publishing failed ({exc}), {len(self._pending)} rows pending")
+                break
+            self._pending.popleft()
+            sent += 1
+        return sent
 
     def _attach_headers(self, parsed_registers_block):
         return {self.__columns[k]: v for k, v in enumerate(parsed_registers_block)}

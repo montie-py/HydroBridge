@@ -26,8 +26,8 @@ class Client(Runnable):
             service = RegistersProcessingService(plc_adapter, azure_publisher)
 
             while True:
-                readings = await service.run_once()
-                print(f"Published {len(readings)} readings")
+                sent = await service.run_once()
+                print(f"Published {sent} rows, {service.pending_count} pending")
                 await asyncio.sleep(3)
 
 
