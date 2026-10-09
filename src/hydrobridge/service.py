@@ -1,11 +1,13 @@
+import struct
 from collections import deque
 
-import easymodbus.modbus_client as modbus_client_class_file
+from hydrobridge.models import PLCReading
+from hydrobridge.ports import PublishFailedError, TelemetryPublisherPort, RegisterSourcePort
 
-from business.client.adapters.azure_iot_adapter import AzureIoTHubPublisher
-from business.client.adapters.modbus_adapter import ModbusPLCAdapter
-from business.client.domain.models import PLCReading
-from business.client.domain.ports import PublishFailedError
+
+def registers_to_float(low_word : int, high_word : int) -> float:
+    """Decode a 32-bit float stored low word first (easymodbus RegisterOrder.lowHigh)."""
+    return struct.unpack('<f', struct.pack('<HH', low_word, high_word))[0]
 
 
 class RegistersProcessingService:
@@ -22,12 +24,12 @@ class RegistersProcessingService:
 
     def __init__(
             self,
-            source : ModbusPLCAdapter,
-            publisher : AzureIoTHubPublisher,
+            source : RegisterSourcePort,
+            publisher : TelemetryPublisherPort,
             max_pending : int = 20
     ):
-        self._source : ModbusPLCAdapter = source
-        self._publisher : AzureIoTHubPublisher = publisher
+        self._source : RegisterSourcePort = source
+        self._publisher : TelemetryPublisherPort = publisher
         # rows not yet delivered to Azure; when full, appending drops the oldest row
         self._pending : deque[PLCReading] = deque(maxlen=max_pending)
 
@@ -73,10 +75,10 @@ class RegistersProcessingService:
         registers_floats = []
         registers_count = 0
         while registers_count < 52:
-            converted_value = modbus_client_class_file.convert_registers_to_float(
-                [registers_block[registers_count],
-                 registers_block[registers_count + 1]]
-            )[0]
+            converted_value = registers_to_float(
+                registers_block[registers_count],
+                registers_block[registers_count + 1]
+            )
 
             registers_floats.append(f'{converted_value:.2f}')
             registers_count += 2

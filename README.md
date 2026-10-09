@@ -11,9 +11,19 @@ Example:
                              V
     PLC <---------> Device with Internet connection <---------> Data Server
 
+## Installation
+
+The core (`hydrobridge`) has no dependencies; adapters need extras:
+
+    pip install "hydrobridge[modbus,azure]"
+
 ## Usage
 
-`main.py --ip="192.168.1.200" --port=502 --address_from=10 --address_to=10`
+The example application in `app/` wires the Modbus source to Azure IoT Hub. Run it from the project root:
+
+    poetry install --all-extras --all-groups
+    python -m app.main --instance server   # local Modbus test server fed from app/input.csv
+    python -m app.main --instance client   # poll the PLC and publish to Azure
 
 ## TODO
 - [ ] Transform main.py into a polling client: to poll everything from server.py, and to generate a csv file once in 2 mins.

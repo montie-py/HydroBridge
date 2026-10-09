@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from business.client.domain.models import PLCReading
+from hydrobridge.models import PLCReading
 
 
 class PublishFailedError(Exception):

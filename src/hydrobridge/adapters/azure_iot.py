@@ -4,8 +4,8 @@ import json
 from azure.iot.device.aio import IoTHubDeviceClient
 from azure.iot.device import Message
 
-from business.client.domain.models import PLCReading
-from business.client.domain.ports import TelemetryPublisherPort, PublishFailedError
+from hydrobridge.models import PLCReading
+from hydrobridge.ports import TelemetryPublisherPort, PublishFailedError
 
 
 class AzureIoTHubPublisher(TelemetryPublisherPort):

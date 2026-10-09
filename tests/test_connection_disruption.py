@@ -4,11 +4,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from business.client.adapters.azure_iot_adapter import AzureIoTHubPublisher
-from business.client.adapters.modbus_adapter import ModbusPLCAdapter
-from business.client.domain.models import PLCReading
-from business.client.domain.ports import PublishFailedError, SourceConnectionError
-from business.client.domain.services import RegistersProcessingService
+from hydrobridge.adapters.azure_iot import AzureIoTHubPublisher
+from hydrobridge.adapters.modbus import ModbusPLCAdapter
+from hydrobridge.models import PLCReading
+from hydrobridge.ports import PublishFailedError, SourceConnectionError
+from hydrobridge.service import RegistersProcessingService
 
 REGISTERS = [0] * 52
 
@@ -66,7 +66,7 @@ class FakePublisher:
 def test_server_down_raises_after_5_attempts_1_sec_apart():
     adapter = make_plc_adapter(failures=100)
 
-    with patch("business.client.adapters.modbus_adapter.asyncio.sleep", new=AsyncMock()) as sleep:
+    with patch("hydrobridge.adapters.modbus.asyncio.sleep", new=AsyncMock()) as sleep:
         with pytest.raises(SourceConnectionError) as exc_info:
             asyncio.run(adapter.read_block())
 
@@ -79,7 +79,7 @@ def test_server_down_raises_after_5_attempts_1_sec_apart():
 def test_server_recovers_within_retry_limit():
     adapter = make_plc_adapter(failures=4)
 
-    with patch("business.client.adapters.modbus_adapter.asyncio.sleep", new=AsyncMock()):
+    with patch("hydrobridge.adapters.modbus.asyncio.sleep", new=AsyncMock()):
         block = asyncio.run(adapter.read_block())
 
     assert adapter._client.connect_calls == 5
@@ -90,7 +90,7 @@ def test_server_down_propagates_through_service():
     publisher = FakePublisher()
     service = RegistersProcessingService(make_plc_adapter(failures=100), publisher)
 
-    with patch("business.client.adapters.modbus_adapter.asyncio.sleep", new=AsyncMock()):
+    with patch("hydrobridge.adapters.modbus.asyncio.sleep", new=AsyncMock()):
         with pytest.raises(SourceConnectionError):
             asyncio.run(service.run_once())
 
@@ -141,7 +141,7 @@ def test_azure_down_keeps_only_20_most_recent_rows():
 
 
 def make_azure_publisher(iot_client):
-    with patch("business.client.adapters.azure_iot_adapter.IoTHubDeviceClient") as client_class:
+    with patch("hydrobridge.adapters.azure_iot.IoTHubDeviceClient") as client_class:
         client_class.create_from_connection_string.return_value = iot_client
         return AzureIoTHubPublisher("fake-connection-string", operation_timeout_sec=0.05)
 

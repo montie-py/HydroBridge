@@ -1,12 +1,13 @@
 import logging
 import threading
 import csv
+from pathlib import Path
 from time import sleep
 
 from easymodbus import modbus_server
 from easymodbus.modbus_client import convert_float_to_two_registers
 
-from business.runnable import Runnable
+from app.runnable import Runnable
 
 # easymodbus stores every data table as a plain 0-indexed Python list of
 # length 65535, but it answers a client request for address N out of
@@ -15,6 +16,7 @@ from business.runnable import Runnable
 # client actually sees.
 _ADDR_OFFSET = 1
 _SERVER_LOGGING_LEVEL = logging.CRITICAL
+_INPUT_CSV = Path(__file__).resolve().parent / "input.csv"
 
 
 class Server(Runnable):
@@ -121,7 +123,7 @@ class Server(Runnable):
             pass
         print("stopping")
 
-    def fill_registers(self, file_name="input.csv"):
+    def fill_registers(self, file_name=_INPUT_CSV):
         with open(file_name, mode="r", encoding="utf-8", newline="") as file:
             reader = csv.reader(file)
 

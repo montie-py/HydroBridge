@@ -1,23 +1,20 @@
 [project]
 name = "hydrobridge"
 version = "0.1.0"
-description = ""
+description = "Read PLC registers over Modbus and publish them as telemetry"
 authors = [
     {name = "montiepy"}
 ]
 readme = "README.md"
-requires-python = ">=3.14,<4"
-dependencies = [
-    "pymodbus (>=3.12.1,<4.0.0)",
-    "pydantic (==2.13.5)",
-    "easymodbus (>=2.1.6,<3.0.0)",
-    "azure-iot-device (>=2.14.0,<3.0.0)",
-    "pydantic-settings (>=2.15.0,<3.0.0)"
-]
+requires-python = ">=3.11,<4"
+dependencies = []
 
+[project.optional-dependencies]
+modbus = ["easymodbus (>=2.1.6,<3.0.0)"]
+azure = ["azure-iot-device (>=2.14.0,<3.0.0)"]
 
-package-mode = false
-
+[tool.poetry]
+packages = [{ include = "hydrobridge", from = "src" }]
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
@@ -25,5 +22,16 @@ build-backend = "poetry.core.masonry.api"
 
 [dependency-groups]
 dev = [
-    "pytest (>=9.1.1,<10.0.0)"
+    "pytest (>=9.1.1,<10.0.0)",
+    # same as the extras, so a plain `poetry install` can run the adapters and their tests
+    "easymodbus (>=2.1.6,<3.0.0)",
+    "azure-iot-device (>=2.14.0,<3.0.0)"
 ]
+# the example application in app/ (not part of the published package)
+app = [
+    "pydantic (==2.13.5)",
+    "pydantic-settings (>=2.15.0,<3.0.0)"
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

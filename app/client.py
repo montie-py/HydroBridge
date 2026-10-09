@@ -1,8 +1,8 @@
-from business.client.adapters.azure_iot_adapter import AzureIoTHubPublisher
-from business.client.adapters.modbus_adapter import ModbusPLCAdapter
-from business.client.domain.services import RegistersProcessingService
-from business.runnable import Runnable
-from config.devices_config import get_config
+from hydrobridge.adapters.azure_iot import AzureIoTHubPublisher
+from hydrobridge.adapters.modbus import ModbusPLCAdapter
+from hydrobridge import RegistersProcessingService
+from app.runnable import Runnable
+from app.config.devices_config import get_config
 import asyncio
 from project_settings import IOTHUB_DEVICE_CONNECTION_STRING
 

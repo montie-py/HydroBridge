@@ -1,8 +1,8 @@
 # #!/usr/bin/env python3
 import argparse, asyncio
-from business.client.client import Client
-from business.server import Server
-from business.publish_to_plc import PublishToPLC
+from app.client import Client
+from app.server import Server
+from app.publish_to_plc import PublishToPLC
 
 class InstanceHandler:
     def get_client(self):

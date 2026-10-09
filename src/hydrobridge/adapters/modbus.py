@@ -1,8 +1,8 @@
 import asyncio
 import datetime
 
-from business.client.domain.models import RawRegisterBlock
-from business.client.domain.ports import RegisterSourcePort, SourceConnectionError
+from hydrobridge.models import RawRegisterBlock
+from hydrobridge.ports import RegisterSourcePort, SourceConnectionError
 from easymodbus.modbus_client import ModbusClient
 
 class ModbusPLCAdapter(RegisterSourcePort):
