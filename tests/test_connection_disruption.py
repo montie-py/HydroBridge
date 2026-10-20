@@ -39,15 +39,13 @@ class FakeModbusClient:
         self.connected = False
 
 
-def make_plc_adapter(failures):
-    adapter = ModbusPLCAdapter("127.0.0.1", 5020, "test-device", 0, 52)
-    adapter._client = FakeModbusClient(failures)
-    return adapter
+def make_plc_adapter(client):
+    return ModbusPLCAdapter("127.0.0.1", 5020, "test-device", 0, 52, client=client)
 
 
 class FakeSource:
     async def read_block(self):
-        return await make_plc_adapter(failures=0).read_block()
+        return await make_plc_adapter(FakeModbusClient(failures=0)).read_block()
 
 
 class FakePublisher:
@@ -66,31 +64,33 @@ class FakePublisher:
 # --- Modbus server disruption ---
 
 def test_server_down_raises_after_5_attempts_1_sec_apart():
-    adapter = make_plc_adapter(failures=100)
+    client = FakeModbusClient(failures=100)
+    adapter = make_plc_adapter(client)
 
     with patch("hydrobridge.adapters.modbus.asyncio.sleep", new=AsyncMock()) as sleep:
         with pytest.raises(SourceConnectionError) as exc_info:
             asyncio.run(adapter.read_block())
 
-    assert adapter._client.connect_calls == 5
+    assert client.connect_calls == 5
     assert sleep.await_count == 4  # no sleep after the last attempt
     assert all(call.args == (1,) for call in sleep.await_args_list)
     assert isinstance(exc_info.value.__cause__, ConnectionRefusedError)
 
 
 def test_server_recovers_within_retry_limit():
-    adapter = make_plc_adapter(failures=4)
+    client = FakeModbusClient(failures=4)
+    adapter = make_plc_adapter(client)
 
     with patch("hydrobridge.adapters.modbus.asyncio.sleep", new=AsyncMock()):
         block = asyncio.run(adapter.read_block())
 
-    assert adapter._client.connect_calls == 5
+    assert client.connect_calls == 5
     assert block.registers == REGISTERS
 
 
 def test_server_down_propagates_through_service():
     publisher = FakePublisher()
-    service = RegistersProcessingService(make_plc_adapter(failures=100), publisher, REGISTER_MAP)
+    service = RegistersProcessingService(make_plc_adapter(FakeModbusClient(failures=100)), publisher, REGISTER_MAP)
 
     with patch("hydrobridge.adapters.modbus.asyncio.sleep", new=AsyncMock()):
         with pytest.raises(SourceConnectionError):
@@ -143,9 +143,7 @@ def test_azure_down_keeps_only_20_most_recent_rows():
 
 
 def make_azure_publisher(iot_client):
-    with patch("hydrobridge.adapters.azure_iot.IoTHubDeviceClient") as client_class:
-        client_class.create_from_connection_string.return_value = iot_client
-        return AzureIoTHubPublisher("fake-connection-string", operation_timeout_sec=0.05)
+    return AzureIoTHubPublisher(client=iot_client, operation_timeout_sec=0.05)
 
 
 def make_reading():

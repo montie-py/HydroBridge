@@ -14,11 +14,12 @@ class Client(Runnable):
         await self.parse_server()
 
     async def parse_server(self):
-        register_map = self._config.devices_configuration[0].build_register_map()
+        device = self._config.devices_configuration[0]
+        register_map = device.build_register_map()
 
         async with ModbusPLCAdapter(
-            host="127.0.0.1",
-            port=5020,
+            host=device.device_ip,
+            port=device.device_port,
             device_id="hydrobridge-gw1",
             start_address=register_map.start_address,
             count=register_map.register_count

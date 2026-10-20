@@ -7,12 +7,15 @@ from easymodbus.modbus_client import ModbusClient
 
 class ModbusPLCAdapter(RegisterSourcePort):
     def __init__(self, host, port, device_id, start_address, count,
-                 connect_attempts : int = 5, retry_interval_sec : float = 1):
+                 connect_attempts : int = 5, retry_interval_sec : float = 1,
+                 *, client : ModbusClient | None = None):
+        """``client`` replaces the ModbusClient(host, port) the adapter would create;
+        it needs connect(), close(), is_connected() and read_holding_registers(start, count)."""
         self._host = host
         self._port = port
         self._connect_attempts = connect_attempts
         self._retry_interval_sec = retry_interval_sec
-        self._client = ModbusClient(host, port)
+        self._client = client if client is not None else ModbusClient(host, port)
         self._device_id = device_id
         self._start_address = start_address
         self._count = count

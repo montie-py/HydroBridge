@@ -4,7 +4,7 @@
     {
       "SerialNumber" : "1705109868",
       "DeviceIp" : "127.0.0.1",
-      "DevicePort" : 502,
+      "DevicePort" : 5020,
       "RegisterMap" :
       [
         { "Name": "worker_inlet_conductivity", "Address": 0, "DataType": "float32", "WordOrder": "low_high", "Decimals": 2 },

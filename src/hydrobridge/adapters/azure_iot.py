@@ -10,8 +10,16 @@ from hydrobridge.ports import TelemetryPublisherPort, PublishFailedError
 
 class AzureIoTHubPublisher(TelemetryPublisherPort):
 
-    def __init__(self, connection_string : str, operation_timeout_sec : float = 10):
-        self._client = IoTHubDeviceClient.create_from_connection_string(
+    def __init__(self, connection_string : str | None = None, operation_timeout_sec : float = 10,
+                 *, client : IoTHubDeviceClient | None = None):
+        """Pass either ``connection_string`` or an already created ``client``.
+
+        A client built here has connection_retry=False because the service keeps unsent rows
+        and retries them itself; an injected client should be created the same way.
+        """
+        if (connection_string is None) == (client is None):
+            raise ValueError("pass exactly one of connection_string or client")
+        self._client = client if client is not None else IoTHubDeviceClient.create_from_connection_string(
             connection_string, connection_retry=False
         )
         self._operation_timeout_sec = operation_timeout_sec
