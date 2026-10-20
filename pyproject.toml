@@ -35,3 +35,8 @@ app = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# the project root, so tests can import the example app (app/)
+pythonpath = ["."]
+markers = [
+    "packaging: builds the wheel and installs it into a fresh venv (slower; deselect with -m 'not packaging')",
+]

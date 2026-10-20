@@ -1,8 +1,11 @@
 import asyncio
 import json
 
-from azure.iot.device.aio import IoTHubDeviceClient
-from azure.iot.device import Message
+try:
+    from azure.iot.device.aio import IoTHubDeviceClient
+    from azure.iot.device import Message
+except ImportError as exc:
+    raise ImportError('hydrobridge.adapters.azure_iot needs azure-iot-device: pip install "hydrobridge[azure]"') from exc
 
 from hydrobridge.models import PLCReading
 from hydrobridge.ports import TelemetryPublisherPort, PublishFailedError

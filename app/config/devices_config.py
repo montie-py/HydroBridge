@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from hydrobridge import RegisterMap
 
@@ -13,8 +13,7 @@ class RegisterFieldConfig(BaseModel):
     word_order: str = Field(default="low_high", alias="WordOrder")
     decimals: int | None = Field(default=None, alias="Decimals")
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class DevicesConfig(BaseModel):
@@ -23,8 +22,7 @@ class DevicesConfig(BaseModel):
     device_port: int = Field(alias="DevicePort")
     register_map: list[RegisterFieldConfig] = Field(alias="RegisterMap")
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
     def build_register_map(self) -> RegisterMap:
         # the block to read (start address, register count) follows from the map
