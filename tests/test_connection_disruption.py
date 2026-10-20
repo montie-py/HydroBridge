@@ -8,9 +8,11 @@ from hydrobridge.adapters.azure_iot import AzureIoTHubPublisher
 from hydrobridge.adapters.modbus import ModbusPLCAdapter
 from hydrobridge.models import PLCReading
 from hydrobridge.ports import PublishFailedError, SourceConnectionError
+from hydrobridge.register_map import RegisterField
 from hydrobridge.service import RegistersProcessingService
 
 REGISTERS = [0] * 52
+REGISTER_MAP = [RegisterField("value", address=0)]
 
 
 class FakeModbusClient:
@@ -88,7 +90,7 @@ def test_server_recovers_within_retry_limit():
 
 def test_server_down_propagates_through_service():
     publisher = FakePublisher()
-    service = RegistersProcessingService(make_plc_adapter(failures=100), publisher)
+    service = RegistersProcessingService(make_plc_adapter(failures=100), publisher, REGISTER_MAP)
 
     with patch("hydrobridge.adapters.modbus.asyncio.sleep", new=AsyncMock()):
         with pytest.raises(SourceConnectionError):
@@ -102,7 +104,7 @@ def test_server_down_propagates_through_service():
 
 def test_azure_down_keeps_rows_pending_and_flushes_in_order_on_recovery():
     publisher = FakePublisher(online=False)
-    service = RegistersProcessingService(FakeSource(), publisher)
+    service = RegistersProcessingService(FakeSource(), publisher, REGISTER_MAP)
 
     async def scenario():
         for _ in range(3):
@@ -121,7 +123,7 @@ def test_azure_down_keeps_rows_pending_and_flushes_in_order_on_recovery():
 
 def test_azure_down_keeps_only_20_most_recent_rows():
     publisher = FakePublisher(online=False)
-    service = RegistersProcessingService(FakeSource(), publisher)
+    service = RegistersProcessingService(FakeSource(), publisher, REGISTER_MAP)
 
     async def scenario():
         for _ in range(25):

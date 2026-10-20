@@ -10,6 +10,7 @@ from hydrobridge.ports import (
     SourceConnectionError,
     TelemetryPublisherPort,
 )
+from hydrobridge.register_map import RegisterField, RegisterMap, load_register_map
 from hydrobridge.service import RegistersProcessingService, registers_to_float
 
 __all__ = [
@@ -19,6 +20,9 @@ __all__ = [
     "RegisterSourcePort",
     "SourceConnectionError",
     "TelemetryPublisherPort",
+    "RegisterField",
+    "RegisterMap",
+    "load_register_map",
     "RegistersProcessingService",
     "registers_to_float",
 ]

@@ -37,7 +37,8 @@ class ModbusPLCAdapter(RegisterSourcePort):
         return RawRegisterBlock(
             device_id=self._device_id,
             registers=registers_values_list,
-            read_at=datetime.datetime.now()
+            read_at=datetime.datetime.now(),
+            start_address=self._start_address
         )
 
     async def _connect(self):

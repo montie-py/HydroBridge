@@ -1,7 +1,9 @@
 import struct
 from collections import deque
+from typing import Iterable
 
 from hydrobridge.models import PLCReading
+from hydrobridge.register_map import RegisterField, RegisterMap
 from hydrobridge.ports import PublishFailedError, TelemetryPublisherPort, RegisterSourcePort
 
 
@@ -11,23 +13,17 @@ def registers_to_float(low_word : int, high_word : int) -> float:
 
 
 class RegistersProcessingService:
-    __columns = ["worker_inlet_conductivity", "worker_inlet_temperature", "worker_pre_pump_pressure",
-               "worker_post_pump_pressure", "worker_product_pressure", "Worker Product Flow (GPM)",
-               "Worker Product Temperature (C)", "Worker Waste Flow (GPM)", "Worker Recycle Flow (GPM)",
-               "Worker Product Conductivity (uS)", "Polisher Inlet Conductivity (uS)", "Polisher Inlet Temperature (C)",
-               "Polisher Pre Pump Pressure (PSI)", "Polisher Post Pump Pressure (PSI)",
-               "Polisher Product Pressure (PSI)", "Polisher Product Flow (GPM)", "Polisher Product Temperature (C)",
-               "Polisher Waste Flow (GPM)", "Polisher Recycle Flow (GPM)", "Polisher Product Conductivity (uS)",
-               "System Product Conductivity (uS)", "-Reserved1-", "-Reserved2-", "-Reserved3-",
-               "Worker Inlet Flow (GPM, calc)", "Polisher Inlet Flow (GPM, calc)"
-               ]
-
     def __init__(
             self,
             source : RegisterSourcePort,
             publisher : TelemetryPublisherPort,
+            register_map : Iterable[RegisterField],
             max_pending : int = 20
     ):
+        # wrapping validates the fields: unique names, no overlapping registers
+        self._register_map : RegisterMap = (
+            register_map if isinstance(register_map, RegisterMap) else RegisterMap(register_map)
+        )
         self._source : RegisterSourcePort = source
         self._publisher : TelemetryPublisherPort = publisher
         # rows not yet delivered to Azure; when full, appending drops the oldest row
@@ -44,12 +40,12 @@ class RegistersProcessingService:
         """
         raw_register_block_instance = await self._source.read_block()
 
-        parsed_registers_block = self._parse(raw_register_block_instance.registers)
-        headed_registers_block = self._attach_headers(parsed_registers_block)
-
         plc_reading = PLCReading(
             device_id=raw_register_block_instance.device_id,
-            registers=headed_registers_block,
+            registers=self._register_map.decode(
+                raw_register_block_instance.registers,
+                raw_register_block_instance.start_address
+            ),
             read_at=raw_register_block_instance.read_at
         )
 
@@ -67,20 +63,3 @@ class RegistersProcessingService:
             self._pending.popleft()
             sent += 1
         return sent
-
-    def _attach_headers(self, parsed_registers_block):
-        return {self.__columns[k]: v for k, v in enumerate(parsed_registers_block)}
-
-    def _parse(self, registers_block):
-        registers_floats = []
-        registers_count = 0
-        while registers_count < 52:
-            converted_value = registers_to_float(
-                registers_block[registers_count],
-                registers_block[registers_count + 1]
-            )
-
-            registers_floats.append(f'{converted_value:.2f}')
-            registers_count += 2
-
-        return registers_floats
