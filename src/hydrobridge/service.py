@@ -1,3 +1,4 @@
+import logging
 import struct
 from collections import deque
 from typing import Iterable
@@ -5,6 +6,8 @@ from typing import Iterable
 from hydrobridge.models import PLCReading
 from hydrobridge.register_map import RegisterField, RegisterMap
 from hydrobridge.ports import PublishFailedError, TelemetryPublisherPort, RegisterSourcePort
+
+logger = logging.getLogger(__name__)
 
 
 def registers_to_float(low_word : int, high_word : int) -> float:
@@ -49,6 +52,9 @@ class RegistersProcessingService:
             read_at=raw_register_block_instance.read_at
         )
 
+        if len(self._pending) == self._pending.maxlen:
+            logger.warning("Pending queue is full (%d rows), dropping the oldest reading, read at %s",
+                           self._pending.maxlen, self._pending[0].read_at.isoformat())
         self._pending.append(plc_reading)
         return await self._flush_pending()
 
@@ -58,8 +64,10 @@ class RegistersProcessingService:
             try:
                 await self._publisher.publish(self._pending[0])
             except PublishFailedError as exc:
-                print(f"Publishing failed ({exc}), {len(self._pending)} rows pending")
+                logger.warning("Publishing failed (%s), %d rows pending", exc, len(self._pending))
                 break
-            self._pending.popleft()
+            published = self._pending.popleft()
+            logger.debug("Published reading from %s, read at %s",
+                         published.device_id, published.read_at.isoformat())
             sent += 1
         return sent

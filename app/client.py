@@ -4,7 +4,10 @@ from hydrobridge import RegistersProcessingService
 from app.runnable import Runnable
 from app.config.devices_config import get_config
 import asyncio
+import logging
 from project_settings import IOTHUB_DEVICE_CONNECTION_STRING
+
+logger = logging.getLogger(__name__)
 
 class Client(Runnable):
     def __init__(self):
@@ -30,7 +33,7 @@ class Client(Runnable):
 
             while True:
                 sent = await service.run_once()
-                print(f"Published {sent} rows, {service.pending_count} pending")
+                logger.info("Published %d rows, %d pending", sent, service.pending_count)
                 await asyncio.sleep(3)
 
 

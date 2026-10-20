@@ -1,9 +1,13 @@
 import asyncio
 import datetime
+import logging
 
 from hydrobridge.models import RawRegisterBlock
 from hydrobridge.ports import RegisterSourcePort, SourceConnectionError
 from easymodbus.modbus_client import ModbusClient
+
+logger = logging.getLogger(__name__)
+
 
 class ModbusPLCAdapter(RegisterSourcePort):
     def __init__(self, host, port, device_id, start_address, count,
@@ -36,6 +40,7 @@ class ModbusPLCAdapter(RegisterSourcePort):
         registers_values_list = await asyncio.to_thread(
             self._client.read_holding_registers, self._start_address, self._count
         )
+        logger.debug("Read %d registers from address %d", len(registers_values_list), self._start_address)
 
         return RawRegisterBlock(
             device_id=self._device_id,
@@ -48,13 +53,16 @@ class ModbusPLCAdapter(RegisterSourcePort):
         for attempt in range(1, self._connect_attempts + 1):
             try:
                 await asyncio.to_thread(self._client.connect)
+                logger.info("Connected to %s:%s", self._host, self._port)
                 return
             except OSError as exc:
-                print(f"Connection to {self._host}:{self._port} failed "
-                      f"(attempt {attempt}/{self._connect_attempts}): {exc}")
                 if attempt < self._connect_attempts:
+                    logger.warning("Connection to %s:%s failed (attempt %d/%d): %s; retrying in %s s",
+                                   self._host, self._port, attempt, self._connect_attempts, exc,
+                                   self._retry_interval_sec)
                     await asyncio.sleep(self._retry_interval_sec)
                 else:
+                    # not logged: the caller gets the error, with this attempt's exception as __cause__
                     raise SourceConnectionError(
                         f"Could not connect to {self._host}:{self._port} "
                         f"after {self._connect_attempts} attempts"

@@ -18,6 +18,8 @@ _ADDR_OFFSET = 1
 _SERVER_LOGGING_LEVEL = logging.CRITICAL
 _INPUT_CSV = Path(__file__).resolve().parent / "input.csv"
 
+logger = logging.getLogger(__name__)
+
 
 class Server(Runnable):
     def __init__(self, host="127.0.0.1", port=5020):
@@ -37,7 +39,7 @@ class Server(Runnable):
             return
         self._thread = threading.Thread(target=self.server.listen, daemon=True)
         self._thread.start()
-        print(f"Modbus server listening on {self.host}:{self.port}")
+        logger.info("Modbus server listening on %s:%s", self.host, self.port)
 
     async def run(self):
         """Start the server, then accept register edits from stdin."""
@@ -132,7 +134,7 @@ class Server(Runnable):
 
             for row in reader:
                 i = 0
-                print(row[3:])
+                logger.debug("Loading CSV row into registers: %s", row[3:])
                 for column in row[3:]:
                    value_to_registers_list = convert_float_to_two_registers(float(column))
                    # value_to_registers_list.sort(reverse=True)
