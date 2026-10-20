@@ -29,16 +29,29 @@ def wheel(tmp_path_factory):
     return wheel_path
 
 
+def installed_packages(python):
+    result = subprocess.run([python, "-m", "pip", "list", "--format=freeze"],
+                            capture_output=True, text=True, check=True)
+    return {line.split("==")[0].lower() for line in result.stdout.split()}
+
+
 @pytest.fixture(scope="module")
-def core_only_python(wheel, tmp_path_factory):
-    """Python of a fresh venv with the wheel installed and no extras."""
+def fresh_venv(wheel, tmp_path_factory):
+    """Python of a fresh venv with the wheel installed and no extras, and what the venv had before."""
     env_dir = tmp_path_factory.mktemp("venv")
     venv.create(env_dir, with_pip=True)
     python = env_dir / ("Scripts" if sys.platform == "win32" else "bin") / "python"
+    # a fresh venv isn't empty, and what it holds depends on the Python version (3.11 adds setuptools)
+    before = installed_packages(python)
     # --no-index: nothing may come from PyPI, so any required dependency would make this fail
     subprocess.run([python, "-m", "pip", "install", "--no-index", "--quiet", wheel],
                    check=True, capture_output=True)
-    return python
+    return python, before
+
+
+@pytest.fixture(scope="module")
+def core_only_python(fresh_venv):
+    return fresh_venv[0]
 
 
 def run(python, code):
@@ -61,11 +74,9 @@ def test_dependencies_are_only_behind_extras(wheel):
     assert all("extra ==" in line for line in requirements), requirements
 
 
-def test_core_installs_with_nothing_else(core_only_python):
-    result = subprocess.run([core_only_python, "-m", "pip", "list", "--format=freeze"],
-                            capture_output=True, text=True, check=True)
-    installed = {line.split("==")[0].lower() for line in result.stdout.split()}
-    assert installed - {"pip"} == {"hydrobridge"}
+def test_core_installs_with_nothing_else(fresh_venv):
+    python, before = fresh_venv
+    assert installed_packages(python) - before == {"hydrobridge"}
 
 
 def test_core_works_without_extras(core_only_python):
