@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import logging
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -11,54 +12,14 @@ from hydrobridge.ports import PublishFailedError, SourceConnectionError
 from hydrobridge.register_map import RegisterField
 from hydrobridge.service import RegistersProcessingService
 
+from fakes import FakeModbusClient, FakePublisher, FakeSource
+
 REGISTERS = [0] * 52
 REGISTER_MAP = [RegisterField("value", address=0)]
 
 
-class FakeModbusClient:
-    """Stands in for easymodbus ModbusClient: connect() fails `failures` times, then succeeds."""
-
-    def __init__(self, failures):
-        self.failures = failures
-        self.connect_calls = 0
-        self.connected = False
-
-    def is_connected(self):
-        return self.connected
-
-    def connect(self):
-        self.connect_calls += 1
-        if self.connect_calls <= self.failures:
-            raise ConnectionRefusedError(111, "Connection refused")
-        self.connected = True
-
-    def read_holding_registers(self, start_address, count):
-        return REGISTERS
-
-    def close(self):
-        self.connected = False
-
-
 def make_plc_adapter(client):
-    return ModbusPLCAdapter("127.0.0.1", 5020, "test-device", 0, 52, client=client)
-
-
-class FakeSource:
-    async def read_block(self):
-        return await make_plc_adapter(FakeModbusClient(failures=0)).read_block()
-
-
-class FakePublisher:
-    """Fails while `online` is False, records delivered readings otherwise."""
-
-    def __init__(self, online=True):
-        self.online = online
-        self.sent: list[PLCReading] = []
-
-    async def publish(self, plc_reading):
-        if not self.online:
-            raise PublishFailedError("Azure unreachable")
-        self.sent.append(plc_reading)
+    return ModbusPLCAdapter("127.0.0.1", 5020, "test-device", 0, 52, client_factory=lambda: client)
 
 
 # --- Modbus server disruption ---
@@ -98,6 +59,85 @@ def test_server_down_propagates_through_service():
 
     assert publisher.sent == []
     assert service.pending_count == 0
+
+
+# --- PLC dropping mid-session ---
+# easymodbus keeps reporting is_connected() after the PLC closes the connection; the read raises
+# ModbusTimeoutError and close() raises OSError (FakeModbusClient.drop() reproduces this)
+
+def connected_adapter_whose_plc_dropped():
+    client = FakeModbusClient(registers=REGISTERS)
+    adapter = ModbusPLCAdapter("127.0.0.1", 5020, "test-device", 0, 52, retry_interval_sec=0, client_factory=lambda: client)
+    asyncio.run(adapter.read_block())
+    client.drop()
+    return adapter, client
+
+
+def test_plc_drop_reconnects_and_reads_again():
+    adapter, client = connected_adapter_whose_plc_dropped()
+
+    block = asyncio.run(adapter.read_block())
+
+    assert block.registers == REGISTERS
+    assert client.connect_calls == 2
+
+
+def test_plc_drop_without_recovery_raises_source_connection_error():
+    adapter, client = connected_adapter_whose_plc_dropped()
+    client.failures = 100        # every reconnect attempt is refused
+
+    with pytest.raises(SourceConnectionError):
+        asyncio.run(adapter.read_block())
+
+
+def test_plc_drop_replaces_the_dead_client_with_a_new_one():
+    # a real easymodbus client can't reconnect after a drop, so the adapter must ask for a new one
+    first, second = FakeModbusClient(registers=REGISTERS), FakeModbusClient(registers=[5] * 52)
+    clients = iter([first, second])
+    adapter = ModbusPLCAdapter("127.0.0.1", 5020, "test-device", 0, 52, client_factory=lambda: next(clients))
+
+    asyncio.run(adapter.read_block())
+    first.drop()
+    block = asyncio.run(adapter.read_block())
+
+    assert block.registers == [5] * 52
+    assert (first.connect_calls, second.connect_calls) == (1, 1)
+
+
+def test_read_failing_again_after_reconnecting_raises_source_connection_error():
+    adapter, client = connected_adapter_whose_plc_dropped()
+    client.connect = lambda: None        # connects but stays dropped: the PLC accepts and closes again
+
+    with pytest.raises(SourceConnectionError, match="failed again after reconnecting") as exc_info:
+        asyncio.run(adapter.read_block())
+
+    assert type(exc_info.value.__cause__).__name__ == "ModbusTimeoutError"
+
+
+def test_plc_drop_logs_a_warning(caplog):
+    caplog.set_level(logging.WARNING, logger="hydrobridge")
+    adapter, _ = connected_adapter_whose_plc_dropped()
+
+    asyncio.run(adapter.read_block())
+
+    assert [r.getMessage() for r in caplog.records] == [
+        "Read from 127.0.0.1:5020 failed (ModbusTimeoutError: Connection closed Exception); reconnecting"
+    ]
+
+
+@pytest.mark.parametrize("count", [0, 126])
+def test_count_outside_the_modbus_limit_is_rejected(count):
+    with pytest.raises(ValueError, match="count must be 1..125"):
+        ModbusPLCAdapter("127.0.0.1", 5020, "test-device", 0, count, client_factory=FakeModbusClient)
+
+
+def test_closing_after_a_plc_drop_does_not_raise():
+    adapter, _ = connected_adapter_whose_plc_dropped()
+
+    async def close():
+        async with adapter:
+            pass
+    asyncio.run(close())
 
 
 # --- Azure disruption ---

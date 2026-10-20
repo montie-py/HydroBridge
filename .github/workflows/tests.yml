@@ -1,0 +1,32 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      # run every version even if one fails, to see which ones break
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Poetry
+        # 2.2+ reads the PEP 735 [dependency-groups] in pyproject.toml
+        run: pip install "poetry>=2.2,<3"
+
+      - name: Install the project with all extras and dependency groups
+        run: poetry install --all-extras --all-groups
+
+      - name: Run tests
+        # includes the packaging test, which builds the wheel with poetry and installs it into a fresh venv
+        run: poetry run pytest -v
