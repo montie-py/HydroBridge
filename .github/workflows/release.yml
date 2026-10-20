@@ -1,0 +1,101 @@
+name: release
+
+# Publishes to TestPyPI, checks the upload installs, then publishes to PyPI.
+# Start it by pushing a tag that matches the version in pyproject.toml:
+#   git tag v0.1.0 && git push origin v0.1.0
+#
+# Uses trusted publishing: no tokens are stored. PyPI and TestPyPI each need a trusted publisher
+# for this repository, workflow file release.yml and environments "pypi" / "testpypi".
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    uses: ./.github/workflows/tests.yml
+
+  build:
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Install Poetry
+        run: pip install "poetry>=2.2,<3"
+
+      - name: Check the tag matches the version in pyproject.toml
+        run: |
+          version=$(poetry version --short)
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME doesn't match version $version in pyproject.toml"
+            exit 1
+          fi
+
+      - name: Build the wheel and the source archive
+        run: poetry build
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+
+  publish-testpypi:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/hydrobridge
+    permissions:
+      # lets PyPI verify the upload comes from this workflow (trusted publishing)
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+  check-testpypi:
+    needs: publish-testpypi
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Install the uploaded version from TestPyPI and import it
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          # a new upload can take a little while to appear in the index
+          for attempt in 1 2 3 4 5 6; do
+            pip install --no-cache-dir --index-url https://test.pypi.org/simple/ "hydrobridge==$version" && break
+            sleep 20
+          done
+          python -c "import hydrobridge; from hydrobridge import RegisterMap, RegistersProcessingService; print(hydrobridge.__all__)"
+
+  publish-pypi:
+    needs: check-testpypi
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/hydrobridge
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1

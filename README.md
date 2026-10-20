@@ -135,5 +135,19 @@ The client reads the Azure connection string from `project_settings.py` (not in 
 
 GitHub Actions runs the tests on Python 3.11–3.14 on every push and pull request.
 
+### Releasing
+
+1. Set the new version in `pyproject.toml` (`poetry version patch`, `minor` or `major`) and commit it.
+2. Tag the commit with the same version and push the tag:
+
+       git tag v0.1.1
+       git push origin v0.1.1
+
+GitHub Actions (`release.yml`) then runs the tests, builds the package, publishes it to TestPyPI, checks that it installs from there, and publishes it to PyPI. A version number can only be uploaded once.
+
+## License
+
+MIT, see [LICENSE](https://github.com/montie-py/HydroBridge/blob/master/LICENSE).
+
 ## TODO
 - [ ] Transform main.py into a polling client: to poll everything from server.py, and to generate a csv file once in 2 mins.

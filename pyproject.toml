@@ -6,8 +6,29 @@ authors = [
     {name = "montiepy"}
 ]
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11,<4"
 dependencies = []
+keywords = ["modbus", "plc", "iot", "telemetry", "azure", "scada"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Manufacturing",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: System :: Hardware",
+    "Topic :: System :: Monitoring",
+    "Framework :: AsyncIO",
+]
+
+[project.urls]
+Repository = "https://github.com/montie-py/HydroBridge"
+Issues = "https://github.com/montie-py/HydroBridge/issues"
 
 [project.optional-dependencies]
 modbus = ["easymodbus (>=2.1.6,<3.0.0)"]
@@ -17,7 +38,8 @@ azure = ["azure-iot-device (>=2.14.0,<3.0.0)"]
 packages = [{ include = "hydrobridge", from = "src" }]
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
+# 2.2+ writes the PEP 639 license fields (License-Expression, the LICENSE file in the wheel)
+requires = ["poetry-core>=2.2.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [dependency-groups]
