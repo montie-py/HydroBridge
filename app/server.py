@@ -1,12 +1,13 @@
 import logging
 import threading
 import csv
+from pathlib import Path
 from time import sleep
 
 from easymodbus import modbus_server
 from easymodbus.modbus_client import convert_float_to_two_registers
 
-from business.runnable import Runnable
+from app.runnable import Runnable
 
 # easymodbus stores every data table as a plain 0-indexed Python list of
 # length 65535, but it answers a client request for address N out of
@@ -15,6 +16,9 @@ from business.runnable import Runnable
 # client actually sees.
 _ADDR_OFFSET = 1
 _SERVER_LOGGING_LEVEL = logging.CRITICAL
+_INPUT_CSV = Path(__file__).resolve().parent / "input.csv"
+
+logger = logging.getLogger(__name__)
 
 
 class Server(Runnable):
@@ -35,7 +39,7 @@ class Server(Runnable):
             return
         self._thread = threading.Thread(target=self.server.listen, daemon=True)
         self._thread.start()
-        print(f"Modbus server listening on {self.host}:{self.port}")
+        logger.info("Modbus server listening on %s:%s", self.host, self.port)
 
     async def run(self):
         """Start the server, then accept register edits from stdin."""
@@ -121,7 +125,7 @@ class Server(Runnable):
             pass
         print("stopping")
 
-    def fill_registers(self, file_name="input.csv"):
+    def fill_registers(self, file_name=_INPUT_CSV):
         with open(file_name, mode="r", encoding="utf-8", newline="") as file:
             reader = csv.reader(file)
 
@@ -130,7 +134,7 @@ class Server(Runnable):
 
             for row in reader:
                 i = 0
-                print(row[3:])
+                logger.debug("Loading CSV row into registers: %s", row[3:])
                 for column in row[3:]:
                    value_to_registers_list = convert_float_to_two_registers(float(column))
                    # value_to_registers_list.sort(reverse=True)

@@ -1,4 +1,4 @@
-from business.runnable import Runnable
+from app.runnable import Runnable
 
 
 class PublishToPLC(Runnable):
