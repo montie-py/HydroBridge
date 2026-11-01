@@ -116,6 +116,20 @@ class TestAzurePublisher(PublisherContract):
             "registers": {"level": 1.5, "state": 3},
         }
 
+    def test_non_finite_values_are_sent_as_null(self):
+        reading = PLCReading(device_id="gw1", read_at=datetime.datetime(2026, 10, 19, 12, 0, 0),
+                             registers={"nan": float("nan"), "inf": float("inf"), "-inf": float("-inf"),
+                                        "level": 1.5})
+
+        asyncio.run(self.make_publisher().publish(reading))
+
+        [message] = self.iot_client.send_message.await_args.args
+        # strict parsing: a bare NaN/Infinity in the payload would make this raise
+        def reject(constant):
+            raise ValueError(f"non-standard JSON constant {constant}")
+        payload = json.loads(message.data, parse_constant=reject)
+        assert payload["registers"] == {"nan": None, "inf": None, "-inf": None, "level": 1.5}
+
     def test_connects_first_when_not_connected(self):
         publisher = self.make_publisher()
         self.iot_client.connected = False

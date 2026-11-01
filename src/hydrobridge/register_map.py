@@ -30,6 +30,9 @@ class RegisterField:
     def __post_init__(self):
         if not self.name:
             raise ValueError("RegisterField name must not be empty")
+        # bool is an int subclass, and a float such as 1.5 from a JSON map would only fail later in decode
+        if not isinstance(self.address, int) or isinstance(self.address, bool):
+            raise ValueError(f"{self.name}: address must be an integer, got {self.address!r}")
         if self.address < 0:
             raise ValueError(f"{self.name}: address must be >= 0, got {self.address}")
         if self.data_type not in _FORMATS:

@@ -128,6 +128,10 @@ def test_map_is_a_read_only_sequence():
 @pytest.mark.parametrize("kwargs, message", [
     (dict(name="", address=0), "name must not be empty"),
     (dict(name="x", address=-1), "address must be >= 0"),
+    (dict(name="x", address=1.5), "address must be an integer, got 1.5"),
+    (dict(name="x", address=2.0), "address must be an integer, got 2.0"),
+    (dict(name="x", address="2"), "address must be an integer, got '2'"),
+    (dict(name="x", address=True), "address must be an integer, got True"),
     (dict(name="x", address=0, data_type="float64"), "unknown data_type 'float64'"),
     (dict(name="x", address=0, word_order="big"), "unknown word_order 'big'"),
     (dict(name="x", address=0, decimals=-1), "decimals must be >= 0"),

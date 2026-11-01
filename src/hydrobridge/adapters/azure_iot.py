@@ -1,5 +1,6 @@
 import asyncio
 import json
+import math
 
 try:
     from azure.iot.device.aio import IoTHubDeviceClient
@@ -37,9 +38,13 @@ class AzureIoTHubPublisher(TelemetryPublisherPort):
         payload = {
             "deviceId" : plc_reading.device_id,
             "ts" : plc_reading.read_at.isoformat(),
-            "registers" : plc_reading.registers
+            # JSON has no NaN or Infinity (json.dumps would write them bare), so they are sent as null
+            "registers" : {
+                name : None if isinstance(value, float) and not math.isfinite(value) else value
+                for name, value in plc_reading.registers.items()
+            }
         }
-        msg = Message(json.dumps(payload))
+        msg = Message(json.dumps(payload, allow_nan=False))
         msg.content_type = "application/json"
         msg.content_encoding = "utf-8"
 
